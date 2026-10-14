@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0e1116" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>学期任务站</title>
+<meta name="description" content="公开的学期学习任务与 DDL 看板，底部弹幕评论区。任务由作者维护，任何人可浏览与互动。" />
+<link rel="stylesheet" href="assets/styles.css?v=1" />
+</head>
+<body>
+<a class="skip" href="#tasks-section">跳到任务列表</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      <h1 id="siteTitle">学期任务站</h1>
+      <span class="semester" id="siteSemester"></span>
+    </div>
+    <div class="topbar-actions">
+      <span class="sync" id="syncBadge" title="数据来源">本地演示</span>
+      <button class="btn ghost" id="adminBtn" type="button">作者登录</button>
+    </div>
+  </div>
+</header>
+
+<div class="banner" id="banner" hidden role="status"></div>
+
+<main>
+  <p class="wrap notice" id="announcement" hidden></p>
+
+  <nav class="tabs" role="tablist" aria-label="模块切换">
+    <button class="tab is-on" id="tab-study" data-tab="study" role="tab" aria-selected="true" aria-controls="panel-study" type="button">学习任务</button>
+    <button class="tab" id="tab-activity" data-tab="activity" role="tab" aria-selected="false" aria-controls="panel-activity" type="button">班会活动</button>
+  </nav>
+
+  <section class="wrap stats" id="stats" aria-label="概览"></section>
+
+  <div class="tab-panel" id="panel-study" role="tabpanel" aria-labelledby="tab-study">
+  <section class="wrap" id="weekly-section">
+    <div class="section-head">
+      <h2 id="weekly">每周任务</h2>
+      <span class="hint" id="weeklyCount"></span>
+    </div>
+    <p class="hint">长期持续、每周重复的任务，会一直留在这里，不需要每周重新添加。</p>
+    <ul class="task-list weekly-list" id="weeklyList" aria-live="polite"></ul>
+    <p class="empty" id="weeklyEmpty" hidden></p>
+  </section>
+
+  <section class="wrap" id="tasks-section">
+    <div class="section-head">
+      <h2 id="tasks">任务清单</h2>
+      <div class="toolbar">
+        <label class="sr-only" for="search">搜索任务</label>
+        <input id="search" type="search" placeholder="搜索标题 / 科目 / 标签…" />
+        <div class="chips" id="statusFilter" role="group" aria-label="按状态筛选">
+          <button class="chip is-on" data-status="all" type="button" aria-pressed="true">全部</button>
+          <button class="chip" data-status="todo" type="button" aria-pressed="false">待办</button>
+          <button class="chip" data-status="doing" type="button" aria-pressed="false">进行中</button>
+          <button class="chip" data-status="done" type="button" aria-pressed="false">已完成</button>
+        </div>
+        <button class="btn primary" id="addTaskBtn" type="button" hidden>＋ 添加任务</button>
+      </div>
+    </div>
+    <ul class="task-list" id="taskList" aria-live="polite"></ul>
+    <p class="empty" id="emptyState" hidden></p>
+  </section>
+
+  </div><!-- /panel-study -->
+
+  <div class="tab-panel" id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" hidden>
+    <section class="wrap" id="activity-section">
+      <div class="section-head">
+        <h2 id="activities">班会活动</h2>
+        <span class="hint" id="activityCount"></span>
+        <div class="toolbar">
+          <label class="sr-only" for="activitySearch">搜索活动</label>
+          <input id="activitySearch" type="search" placeholder="搜索活动 / 地点 / 类型…" />
+          <button class="btn primary" id="addActivityBtn" type="button" hidden>＋ 添加活动</button>
+        </div>
+      </div>
+      <p class="hint">班级里的班会、团建、志愿服务等活动，与学习任务完全分开。</p>
+      <ul class="task-list activity-list" id="activityList" aria-live="polite"></ul>
+      <p class="empty" id="activityEmpty" hidden></p>
+    </section>
+  </div><!-- /panel-activity -->
+
+  <section class="wrap" id="comments-section">
+    <div class="section-head">
+      <h2 id="comments">弹幕评论</h2>
+      <span class="hint" id="commentCount"></span>
+    </div>
+    <p class="hint">在下方输入框打字并发送，文字会从右侧飞过。任何人都能发，只有作者能隐藏。</p>
+    <div class="stage" id="danmakuStage" aria-hidden="true"></div>
+    <div class="stage-fallback" id="danmakuFallback" hidden aria-hidden="true"></div>
+    <form class="comment-form" id="commentForm" autocomplete="off">
+      <input id="nickname" type="text" maxlength="24" placeholder="昵称（选填）" aria-label="昵称" />
+      <input id="commentInput" type="text" maxlength="120" placeholder="说点什么…（最多 120 字）" aria-label="弹幕内容" required />
+      <div class="colors" id="colors" role="radiogroup" aria-label="弹幕颜色"></div>
+      <button class="btn primary" type="submit" id="sendBtn">发送</button>
+    </form>
+    <details class="recent">
+      <summary>查看最近的评论（文字版 · 无障碍）</summary>
+      <ul id="commentList"></ul>
+    </details>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>任务由作者维护 · 任何人可浏览与发弹幕 · <a href="#" id="refreshLink">手动刷新</a></p>
+</footer>
+
+<!-- 作者登录 -->
+<div class="modal" id="authModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <h3 id="authTitle">作者登录</h3>
+    <p class="muted" id="authHint">登录后即可增删改任务、管理评论。</p>
+    <form id="authForm">
+      <label>邮箱<input type="email" id="authEmail" autocomplete="username" required /></label>
+      <label>密码<input type="password" id="authPassword" autocomplete="current-password" required /></label>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" data-close>取消</button>
+        <button type="submit" class="btn primary" id="authSubmit">登录</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 任务编辑 -->
+<div class="modal" id="taskModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+    <h3 id="taskModalTitle">添加任务</h3>
+    <form id="taskForm">
+      <label>标题 *<input type="text" id="f_title" maxlength="200" required /></label>
+      <label>任务类型
+        <select id="f_type">
+          <option value="">一次性任务（有截止时间）</option>
+          <option value="weekly">每周持续任务（每周重复出现）</option>
+        </select>
+      </label>
+      <div class="row">
+        <label>科目<input type="text" id="f_course" maxlength="60" placeholder="如：数据结构" /></label>
+        <label>优先级
+          <select id="f_priority">
+            <option value="high">高</option>
+            <option value="mid" selected>中</option>
+            <option value="low">低</option>
+          </select>
+        </label>
+        <label id="f_status_label">状态
+          <select id="f_status">
+            <option value="todo" selected>待办</option>
+            <option value="doing">进行中</option>
+            <option value="done">已完成</option>
+          </select>
+        </label>
+      </div>
+      <label id="f_ddl_label">截止时间 DDL<input type="datetime-local" id="f_ddl" /></label>
+      <label id="f_weekday_label" hidden>每周几
+        <select id="f_weekday">
+          <option value="">不指定（每周任意一天）</option>
+          <option value="1">周一</option>
+          <option value="2">周二</option>
+          <option value="3">周三</option>
+          <option value="4">周四</option>
+          <option value="5">周五</option>
+          <option value="6">周六</option>
+          <option value="7">周日</option>
+        </select>
+      </label>
+      <label>标签（用逗号分隔）<input type="text" id="f_tags" placeholder="论文, 小组作业" /></label>
+      <label>备注<textarea id="f_detail" rows="3" maxlength="2000"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="deleteTaskBtn" hidden>删除</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>取消</button>
+        <button type="submit" class="btn primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 活动编辑 -->
+<div class="modal" id="activityModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="activityModalTitle">
+    <h3 id="activityModalTitle">添加活动</h3>
+    <form id="activityForm">
+      <label>活动名称 *<input type="text" id="a_title" maxlength="200" required /></label>
+      <div class="row">
+        <label>类型 / 主办<input type="text" id="a_category" maxlength="60" placeholder="班会 / 团建 / 志愿" /></label>
+        <label>地点<input type="text" id="a_location" maxlength="80" placeholder="如：教学楼 A203" /></label>
+      </div>
+      <label>活动时间<input type="datetime-local" id="a_time" /></label>
+      <label>标签（用逗号分隔）<input type="text" id="a_tags" placeholder="全班, 必到" /></label>
+      <label>说明<textarea id="a_detail" rows="3" maxlength="2000"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="deleteActivityBtn" hidden>删除</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>取消</button>
+        <button type="submit" class="btn primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="src/config.js?v=1"></script>
+<script src="src/ui.js?v=1"></script>
+<script src="src/auth.js?v=1"></script>
+<script src="src/realtime.js?v=1"></script>
+<script src="src/store.js?v=1"></script>
+<script src="src/danmaku.js?v=1"></script>
+<script src="src/tasks.js?v=1"></script>
+<script src="src/activities.js?v=1"></script>
+<script src="src/comments.js?v=1"></script>
+<script src="src/main.js?v=1"></script>
+</body>
+</html>

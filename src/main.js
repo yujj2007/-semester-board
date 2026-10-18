@@ -20,10 +20,12 @@
 
   function renderHeader() {
     var cfg = App.store.state.config || {};
+    var cls = cfg.class_name || App.CONFIG.site.className || "名不虚传播学班";
     var title = cfg.title || App.CONFIG.site.title;
+    u.qs("#className").textContent = cls;
     u.qs("#siteTitle").textContent = title;
     u.qs("#siteSemester").textContent = cfg.semester || App.CONFIG.site.semester || "";
-    document.title = title;
+    document.title = cls + " · " + title;
     var ann = u.qs("#announcement");
     var text = cfg.announcement || App.CONFIG.site.announcement || "";
     ann.textContent = text;
@@ -42,20 +44,18 @@
   /* 概览（学习任务）：只统计「一次性任务」，每周任务在它自己的分区里 */
   function renderStudyStats() {
     var tasks = (App.store.state.tasks || []).filter(function (t) { return t.repeat_rule !== "weekly"; });
-    var now = Date.now();
-    var done = tasks.filter(function (t) { return t.status === "done"; }).length;
     var overdue = tasks.filter(function (t) {
-      return t.status !== "done" && t.ddl && new Date(t.ddl).getTime() < now;
+      var d = u.daysLeft(t.ddl);
+      return d !== null && d < 0;
     }).length;
     var soon = tasks.filter(function (t) {
-      var d = t.ddl && new Date(t.ddl).getTime();
-      return t.status !== "done" && d && d >= now && (d - now) <= 3 * 86400000;
+      var d = u.daysLeft(t.ddl);
+      return d !== null && d >= 0 && d <= 3;
     }).length;
     var box = u.qs("#stats");
     if (!box) return;
     box.innerHTML =
       stat("一次性任务", tasks.length, "") +
-      stat("已完成", done, done ? "ok" : "") +
       stat("临近（≤3 天）", soon, soon ? "warn" : "") +
       stat("已逾期", overdue, overdue ? "danger" : "");
   }
@@ -109,6 +109,8 @@
     if (addBtn) addBtn.hidden = !isAuthor;
     var addAct = u.qs("#addActivityBtn");
     if (addAct) addAct.hidden = !isAuthor;
+    var editCls = u.qs("#editClassBtn");
+    if (editCls) editCls.hidden = !isAuthor;
     var btn = u.qs("#adminBtn");
     if (btn) btn.textContent = isAuthor ? "退出作者模式" : "作者登录";
   }
@@ -177,6 +179,19 @@
     }
   }
 
+  function onClassSave(e) {
+    e.preventDefault();
+    var v = u.qs("#classInput").value.trim();
+    if (!v) { App.toast("班级名称不能为空", "warn"); return; }
+    App.store.saveConfig({ class_name: v })
+      .then(function () {
+        App.modal.close("#classModal");
+        App.toast("班级名称已更新", "ok", 1800);
+        renderAll();
+      })
+      .catch(function (err) { App.toast(err.message || "保存失败", "danger", 5000); });
+  }
+
   function wireGlobals() {
     u.qs("#adminBtn").addEventListener("click", function () {
       if (App.store.caps().author) {
@@ -193,6 +208,15 @@
     });
 
     u.qs("#authForm").addEventListener("submit", onAuthSubmit);
+
+    var editCls = u.qs("#editClassBtn");
+    if (editCls) editCls.addEventListener("click", function () {
+      var cfg = App.store.state.config || {};
+      u.qs("#classInput").value = cfg.class_name || App.CONFIG.site.className || "";
+      App.modal.open("#classModal");
+    });
+    var classForm = u.qs("#classForm");
+    if (classForm) classForm.addEventListener("submit", onClassSave);
 
     u.qsa(".tab").forEach(function (b) {
       b.addEventListener("click", function () { setActiveModule(b.dataset.tab); });

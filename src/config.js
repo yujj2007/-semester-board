@@ -19,11 +19,13 @@ App.CONFIG = {
   demoAdminPassword: "admin",
 
   site: {
+    className: "名不虚传播学班",
     title: "本学期学习任务",
     semester: "2026 春",
     announcement: "任务由作者实时维护；任何人可浏览全部内容，并在下方发弹幕互动。",
     danmakuReplay: 24,        // 刷新后回放最近多少条弹幕
-    pollIntervalMs: 15000     // 云端轮询间隔（实时性的兜底；掉线会自动退避重试）
+    pollIntervalMs: 15000,    // 云端轮询间隔（实时推送掉线时的兜底）
+    overdueKeepDays: 4        // 逾期多少天后，从任务清单移入「已逾期」折叠区
   },
 
   // 预留功能开关：以后加需求时，改这里即可，不用动其它代码

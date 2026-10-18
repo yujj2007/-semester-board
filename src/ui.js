@@ -55,18 +55,28 @@ App.util = (function () {
     var d = new Date(v); return isNaN(d.getTime()) ? null : d.toISOString();
   }
 
-  /* 返回 { text, tone, date }，tone ∈ muted|info|warn|danger|done */
-  function ddlInfo(iso, done) {
+  /* 按「日历天」计算还差几天：今天=0，明天=1，昨天=-1
+   * 这样 DDL 当天显示「今天截止」，次日才算逾期 1 天。 */
+  function daysLeft(iso) {
     var d = parse(iso);
-    if (!d) return { text: "未设 DDL", tone: "muted", date: "" };
-    var diff = d.getTime() - Date.now();
-    var days = Math.ceil(diff / 86400000);
-    if (done) return { text: "已完成", tone: "done", date: fmtDate(iso) };
-    if (diff < 0) return { text: "已逾期 " + Math.abs(days) + " 天", tone: "danger", date: fmtDate(iso) };
-    if (days <= 0) return { text: "今天截止", tone: "danger", date: fmtDate(iso) };
-    if (days <= 3) return { text: "还有 " + days + " 天", tone: "warn", date: fmtDate(iso) };
-    if (days <= 7) return { text: "还有 " + days + " 天", tone: "info", date: fmtDate(iso) };
-    return { text: "还有 " + days + " 天", tone: "muted", date: fmtDate(iso) };
+    if (!d) return null;
+    var target = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return Math.round((target - today) / 86400000);
+  }
+
+  /* 返回 { text, tone, date, days }，tone ∈ muted|info|warn|danger|done */
+  function ddlInfo(iso, done) {
+    var days = daysLeft(iso);
+    if (days === null) return { text: "未设 DDL", tone: "muted", date: "", days: null };
+    var date = fmtDate(iso);
+    if (done) return { text: "已完成", tone: "done", date: date, days: days };
+    if (days < 0) return { text: "已逾期 " + Math.abs(days) + " 天", tone: "danger", date: date, days: days };
+    if (days === 0) return { text: "今天截止", tone: "danger", date: date, days: days };
+    if (days <= 3) return { text: "还有 " + days + " 天", tone: "warn", date: date, days: days };
+    if (days <= 7) return { text: "还有 " + days + " 天", tone: "info", date: date, days: days };
+    return { text: "还有 " + days + " 天", tone: "muted", date: date, days: days };
   }
 
   function debounce(fn, ms) {
@@ -89,7 +99,7 @@ App.util = (function () {
     qs: qs, qsa: qsa, el: el, esc: esc, pad: pad, uid: uid,
     fmtDate: fmtDate, fmtDateTime: fmtDateTime,
     toLocalInput: toLocalInput, fromLocalInput: fromLocalInput,
-    ddlInfo: ddlInfo, debounce: debounce
+    ddlInfo: ddlInfo, daysLeft: daysLeft, debounce: debounce
   };
 })();
 

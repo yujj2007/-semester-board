@@ -112,7 +112,12 @@ App.store = (function () {
     ];
   }
   function defaultConfig() {
-    return { title: C.site.title, semester: C.site.semester, announcement: C.site.announcement };
+    return {
+      title: C.site.title,
+      semester: C.site.semester,
+      announcement: C.site.announcement,
+      class_name: C.site.className || "名不虚传播学班"
+    };
   }
 
   var local = {
@@ -461,7 +466,11 @@ App.store = (function () {
     },
     saveConfig: function (obj) {
       if (guardAdmin()) return Promise.reject(new Error("请先登录作者账号"));
-      return backend.saveConfig(obj);
+      return backend.saveConfig(obj).then(function () {
+        Object.keys(obj || {}).forEach(function (k) { state.config[k] = obj[k]; });
+        emit("config");
+        return true;
+      });
     },
 
     isAdmin: function () { return isAuthor(); },

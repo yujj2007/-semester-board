@@ -4,7 +4,7 @@ window.App = window.App || {};
 App.tasks = (function () {
   "use strict";
   var u = App.util;
-  var filter = { status: "all", q: "" };
+  var filter = { q: "" };
   var currentId = null;
   var wired = false;
   var WEEK_CN = ["一", "二", "三", "四", "五", "六", "日"];
@@ -17,19 +17,9 @@ App.tasks = (function () {
       filter.q = e.target.value.trim();
       render();
     }, 150));
-    u.qs("#statusFilter").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-status]");
-      if (!b) return;
-      filter.status = b.dataset.status;
-      u.qsa(".chip", u.qs("#statusFilter")).forEach(function (c) {
-        var on = c === b;
-        c.classList.toggle("is-on", on);
-        c.setAttribute("aria-pressed", String(on));
-      });
-      render();
-    });
     u.qs("#taskList").addEventListener("click", onListClick);
     u.qs("#weeklyList").addEventListener("click", onListClick);
+    if (u.qs("#expiredList")) u.qs("#expiredList").addEventListener("click", onListClick);
     u.qs("#addTaskBtn").addEventListener("click", function () { openEditor(null); });
     u.qs("#taskForm").addEventListener("submit", onSave);
     u.qs("#deleteTaskBtn").addEventListener("click", onDelete);
@@ -44,13 +34,19 @@ App.tasks = (function () {
   function fail(err) { App.toast(err && err.message ? err.message : "操作失败", "danger", 5000); }
 
   /* ---------------- 排序 ---------------- */
+  /* 已逾期 = 过了 DDL 当天（按日历天算） */
+  function isOverdue(t) {
+    var d = u.daysLeft(t.ddl);
+    return d !== null && d < 0;
+  }
+  function timeOf(t) { return t.ddl ? new Date(t.ddl).getTime() : Infinity; }
+
   function sortOnce(list) {
     return list.slice().sort(function (a, b) {
-      var ad = a.status === "done" ? 1 : 0, bd = b.status === "done" ? 1 : 0;
-      if (ad !== bd) return ad - bd;
-      var at = a.ddl ? new Date(a.ddl).getTime() : Infinity;
-      var bt = b.ddl ? new Date(b.ddl).getTime() : Infinity;
-      if (at !== bt) return at - bt;
+      var ao = isOverdue(a) ? 1 : 0, bo = isOverdue(b) ? 1 : 0;
+      if (ao !== bo) return ao - bo;                 // 未逾期在前，逾期沉底
+      var at = timeOf(a), bt = timeOf(b);
+      if (at !== bt) return ao === 1 ? bt - at : at - bt;  // 逾期区：最近的在前
       return (a.sort_order || 0) - (b.sort_order || 0);
     });
   }
@@ -78,16 +74,42 @@ App.tasks = (function () {
 
   function renderOnce(allOnce, admin) {
     var listEl = u.qs("#taskList"), emptyEl = u.qs("#emptyState");
+    var box = u.qs("#expiredBox"), expiredList = u.qs("#expiredList"), expiredCount = u.qs("#expiredCount");
     if (!listEl) return;
-    var list = sortOnce(allOnce.filter(function (t) {
-      if (filter.status !== "all" && (t.status || "todo") !== filter.status) return false;
-      return matchesQuery(t);
-    }));
+
+    var keepDays = (App.CONFIG.site && App.CONFIG.site.overdueKeepDays) || 4;
+
+    /* 拆成「仍在清单里」和「逾期超过 N 天、已归档」两组 */
+    var visible = [], archived = [];
+    allOnce.forEach(function (t) {
+      var d = u.daysLeft(t.ddl);
+      if (d !== null && d <= -keepDays) archived.push(t);
+      else visible.push(t);
+    });
+
+    var list = sortOnce(visible.filter(matchesQuery));
     listEl.innerHTML = list.map(function (t) { return rowOnce(t, admin); }).join("");
+
+    /* 已逾期折叠区 */
+    if (box && expiredList) {
+      var sortedArchived = sortOnce(archived);   // 最近逾期的在前
+      expiredList.innerHTML = sortedArchived.map(function (t) { return rowOnce(t, admin, true); }).join("");
+      if (expiredCount) expiredCount.textContent = archived.length;
+      box.hidden = archived.length === 0;
+    }
+
     emptyEl.hidden = list.length > 0;
-    emptyEl.textContent = allOnce.length === 0
-      ? (admin ? "还没有一次性任务，点上方「＋ 添加任务」开始吧。" : "暂时还没有一次性任务，稍后再来看看～")
-      : "没有符合筛选条件的任务。";
+    if (list.length === 0) {
+      if (allOnce.length === 0) {
+        emptyEl.textContent = admin ? "还没有一次性任务，点上方「＋ 添加任务」开始吧。" : "暂时还没有一次性任务，稍后再来看看～";
+      } else if (filter.q) {
+        emptyEl.textContent = "没有符合筛选条件的任务。";
+      } else if (visible.length === 0 && archived.length > 0) {
+        emptyEl.textContent = "没有进行中的任务，已逾期的都在下方「已逾期」里。";
+      } else {
+        emptyEl.textContent = "没有符合筛选条件的任务。";
+      }
+    }
   }
 
   function renderWeekly(list, admin) {
@@ -122,18 +144,15 @@ App.tasks = (function () {
     return u.fmtDate(d.toISOString());
   }
 
-  function rowOnce(t, admin) {
-    var ddl = u.ddlInfo(t.ddl, t.status === "done");
-    var statusLabel = { todo: "待办", doing: "进行中", done: "已完成" }[t.status || "todo"];
+  function rowOnce(t, admin, expired) {
+    var ddl = u.ddlInfo(t.ddl);
     var priLabel = { high: "高", mid: "中", low: "低" }[t.priority || "mid"];
     var tags = (t.tags || []).map(function (x) { return '<span class="tag">' + u.esc(x) + "</span>"; }).join("");
-    return '<li class="task' + (t.status === "done" ? " is-done" : "") + " pri-" + u.esc(t.priority || "mid") + '" data-id="' + u.esc(t.id) + '">' +
-      '<button class="check" type="button" data-action="toggle" aria-label="切换完成状态" ' + (admin ? "" : "disabled") + '>' + (t.status === "done" ? "✓" : "") + "</button>" +
+    return '<li class="task' + (expired ? " is-expired" : "") + " pri-" + u.esc(t.priority || "mid") + '" data-id="' + u.esc(t.id) + '">' +
       '<div class="task-main">' +
         '<div class="task-title">' + u.esc(t.title) + "</div>" +
         '<div class="task-meta">' +
           (t.course ? '<span class="course">' + u.esc(t.course) + "</span>" : "") +
-          '<span class="status s-' + u.esc(t.status || "todo") + '">' + statusLabel + "</span>" +
           '<span class="pri p-' + u.esc(t.priority || "mid") + '">优先级 ' + priLabel + "</span>" +
           tags +
         "</div>" +
@@ -178,12 +197,6 @@ App.tasks = (function () {
     var task = findTask(li.dataset.id);
     if (!task) return;
     var action = e.target.closest("[data-action]");
-    if (action && action.dataset.action === "toggle") {
-      if (!App.store.isAuthor() || isWeekly(task)) return;
-      var next = task.status === "done" ? "todo" : "done";
-      App.store.updateTask(task.id, { status: next }).then(function () { return App.store.refresh(); }).catch(fail);
-      return;
-    }
     if (action && action.dataset.action === "edit") { openEditor(task); return; }
     if (App.store.isAuthor() && !e.target.closest("button")) openEditor(task);
   }
@@ -193,7 +206,6 @@ App.tasks = (function () {
     var weekly = u.qs("#f_type").value === "weekly";
     u.qs("#f_ddl_label").hidden = weekly;
     u.qs("#f_weekday_label").hidden = !weekly;
-    u.qs("#f_status_label").hidden = weekly;
   }
 
   function openEditor(task) {
@@ -203,7 +215,6 @@ App.tasks = (function () {
     u.qs("#f_type").value = task && isWeekly(task) ? "weekly" : "";
     u.qs("#f_course").value = task ? task.course : "";
     u.qs("#f_priority").value = task ? (task.priority || "mid") : "mid";
-    u.qs("#f_status").value = task ? (task.status || "todo") : "todo";
     u.qs("#f_ddl").value = task ? u.toLocalInput(task.ddl) : "";
     u.qs("#f_weekday").value = task && task.weekday ? String(task.weekday) : "";
     u.qs("#f_tags").value = task ? (task.tags || []).join(", ") : "";
@@ -220,7 +231,6 @@ App.tasks = (function () {
       title: u.qs("#f_title").value.trim(),
       course: u.qs("#f_course").value.trim(),
       priority: u.qs("#f_priority").value,
-      status: weekly ? "todo" : u.qs("#f_status").value,
       repeat_rule: weekly ? "weekly" : "",
       weekday: weekly ? (parseInt(u.qs("#f_weekday").value, 10) || null) : null,
       ddl: weekly ? null : u.fromLocalInput(u.qs("#f_ddl").value),

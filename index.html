@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>学期任务站</title>
 <meta name="description" content="公开的学期学习任务与 DDL 看板，底部弹幕评论区。任务由作者维护，任何人可浏览与互动。" />
-<link rel="stylesheet" href="assets/styles.css?v=1" />
+<link rel="stylesheet" href="assets/styles.css?v=3" />
 </head>
 <body>
 <a class="skip" href="#tasks-section">跳到任务列表</a>
@@ -17,8 +17,17 @@
   <div class="wrap topbar-inner">
     <div class="brand">
       <span class="dot" aria-hidden="true"></span>
-      <h1 id="siteTitle">学期任务站</h1>
-      <span class="semester" id="siteSemester"></span>
+      <div class="brand-text">
+        <div class="brand-title">
+          <h1 id="className">名不虚传播学班</h1>
+          <button class="btn tiny ghost edit-class" id="editClassBtn" type="button" title="修改班级名称" hidden>✎</button>
+        </div>
+        <p class="brand-sub">
+          <span id="siteTitle">本学期学习任务</span>
+          <span class="dotsep" aria-hidden="true">·</span>
+          <span id="siteSemester">2026 春</span>
+        </p>
+      </div>
     </div>
     <div class="topbar-actions">
       <span class="sync" id="syncBadge" title="数据来源">本地演示</span>
@@ -56,17 +65,15 @@
       <div class="toolbar">
         <label class="sr-only" for="search">搜索任务</label>
         <input id="search" type="search" placeholder="搜索标题 / 科目 / 标签…" />
-        <div class="chips" id="statusFilter" role="group" aria-label="按状态筛选">
-          <button class="chip is-on" data-status="all" type="button" aria-pressed="true">全部</button>
-          <button class="chip" data-status="todo" type="button" aria-pressed="false">待办</button>
-          <button class="chip" data-status="doing" type="button" aria-pressed="false">进行中</button>
-          <button class="chip" data-status="done" type="button" aria-pressed="false">已完成</button>
-        </div>
         <button class="btn primary" id="addTaskBtn" type="button" hidden>＋ 添加任务</button>
       </div>
     </div>
     <ul class="task-list" id="taskList" aria-live="polite"></ul>
     <p class="empty" id="emptyState" hidden></p>
+    <details class="expired-box" id="expiredBox" hidden>
+      <summary>已逾期 · <span id="expiredCount">0</span> 项（点击展开查看）</summary>
+      <ul class="task-list" id="expiredList" aria-live="polite"></ul>
+    </details>
   </section>
 
   </div><!-- /panel-study -->
@@ -150,13 +157,6 @@
             <option value="low">低</option>
           </select>
         </label>
-        <label id="f_status_label">状态
-          <select id="f_status">
-            <option value="todo" selected>待办</option>
-            <option value="doing">进行中</option>
-            <option value="done">已完成</option>
-          </select>
-        </label>
       </div>
       <label id="f_ddl_label">截止时间 DDL<input type="datetime-local" id="f_ddl" /></label>
       <label id="f_weekday_label" hidden>每周几
@@ -206,17 +206,32 @@
   </div>
 </div>
 
+<!-- 班级名称编辑 -->
+<div class="modal" id="classModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="classModalTitle">
+    <h3 id="classModalTitle">修改班级名称</h3>
+    <form id="classForm">
+      <label>班级名称<input type="text" id="classInput" maxlength="40" required /></label>
+      <div class="modal-actions">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>取消</button>
+        <button type="submit" class="btn primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="src/config.js?v=1"></script>
-<script src="src/ui.js?v=1"></script>
-<script src="src/auth.js?v=1"></script>
-<script src="src/realtime.js?v=1"></script>
-<script src="src/store.js?v=1"></script>
-<script src="src/danmaku.js?v=1"></script>
-<script src="src/tasks.js?v=1"></script>
-<script src="src/activities.js?v=1"></script>
-<script src="src/comments.js?v=1"></script>
-<script src="src/main.js?v=1"></script>
+<script src="src/config.js?v=3"></script>
+<script src="src/ui.js?v=3"></script>
+<script src="src/auth.js?v=3"></script>
+<script src="src/realtime.js?v=3"></script>
+<script src="src/store.js?v=3"></script>
+<script src="src/danmaku.js?v=3"></script>
+<script src="src/tasks.js?v=3"></script>
+<script src="src/activities.js?v=3"></script>
+<script src="src/comments.js?v=3"></script>
+<script src="src/main.js?v=3"></script>
 </body>
 </html>

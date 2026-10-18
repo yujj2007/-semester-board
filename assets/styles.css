@@ -25,7 +25,18 @@ a{color:var(--brand)}
 .topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(14,17,22,.82);border-bottom:1px solid var(--line)}
 .topbar-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand h1{font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-text{min-width:0}
+.brand-title{display:flex;align-items:center;gap:8px;min-width:0}
+.brand h1{
+  font-family:"STKaiti","KaiTi","Kaiti SC","Noto Serif SC","Songti SC","SimSun",serif;
+  font-size:1.5rem;font-weight:700;letter-spacing:.06em;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f4f8ff;
+  text-shadow:0 2px 14px rgba(90,169,255,.18);
+}
+.brand-sub{margin:1px 0 0;font-size:.78rem;color:var(--muted);letter-spacing:.04em;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dotsep{color:var(--faint)}
+.edit-class{flex:none;padding:2px 9px;font-size:.9rem;line-height:1.5;opacity:.7}
+.edit-class:hover{opacity:1}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(90,169,255,.16);flex:none}
 .semester{color:var(--muted);font-size:.85rem;border:1px solid var(--line-2);border-radius:999px;padding:1px 10px;white-space:nowrap}
 .topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
@@ -54,7 +65,7 @@ a{color:var(--brand)}
 
 /* 公告 & 概览 */
 .notice{margin:18px auto 0;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:var(--radius-sm);padding:10px 14px;color:var(--muted);font-size:.94rem}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px auto 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px auto 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
 .stat b{display:block;font-size:1.5rem;line-height:1.2}
 .stat span{color:var(--muted);font-size:.85rem}
@@ -134,7 +145,7 @@ a{color:var(--brand)}
 .modal-card h3{margin-bottom:12px}
 .modal-card label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}
 .modal-card input,.modal-card select,.modal-card textarea{display:block;width:100%;margin-top:5px;background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);padding:9px 11px;border-radius:var(--radius-sm);font:inherit}
-.modal-card .row{display:grid;grid-template-columns:1.4fr .8fr .9fr;gap:10px}
+.modal-card .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal-actions{display:flex;gap:10px;align-items:center;margin-top:16px}
 
 /* Toast */
@@ -157,7 +168,7 @@ a{color:var(--brand)}
 @media (max-width:560px){
   .topbar-inner{flex-wrap:wrap;row-gap:8px;padding:10px 0}
   .brand{flex:1 1 100%}
-  .brand h1{font-size:1.05rem}
+  .brand h1{font-size:1.25rem}
   .topbar-actions{margin-left:0;width:100%;justify-content:space-between}
   .sync{padding:3px 10px}
   .tabs{width:100%}
@@ -188,6 +199,17 @@ a{color:var(--brand)}
 .task--weekly .task-ddl{min-width:96px}
 .task--weekly .task-ddl .ddl-text{color:#cfc4ff}
 .task--weekly .task-ddl .ddl-date{color:#8b83b8}
+
+/* 已逾期折叠区 */
+.expired-box{margin-top:16px;background:var(--panel);border:1px dashed var(--line-2);border-radius:var(--radius);padding:0 12px 12px}
+.expired-box[hidden]{display:none}
+.expired-box summary{cursor:pointer;padding:12px 4px;color:var(--muted);font-size:.9rem;list-style:none}
+.expired-box summary::-webkit-details-marker{display:none}
+.expired-box summary::before{content:"▸ ";color:var(--faint)}
+.expired-box[open] summary::before{content:"▾ "}
+.expired-box .task-list{margin-top:4px}
+.task.is-expired{opacity:.55}
+.task.is-expired .task-title{text-decoration:line-through;text-decoration-color:rgba(255,92,92,.5)}
 
 /* 模块标签页 */
 .tabs{display:flex;gap:6px;margin:22px auto 0;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:999px;width:max-content}

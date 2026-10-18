@@ -221,6 +221,7 @@ grant insert, update, delete on public.authors to authenticated;
 -- 6. 站点基础配置（可在表里直接改）
 -- ---------------------------------------------------------------------
 insert into public.site_config (key, value) values
+  ('class_name',   '"名不虚传播学班"'),
   ('title',        '"本学期学习任务"'),
   ('semester',     '"2026 春"'),
   ('announcement', '"任务由作者实时维护；任何人可浏览全部内容，并在下方发弹幕互动。"')
